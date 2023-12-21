@@ -1,5 +1,3 @@
-# Run with: accelerate launch -m axolotl.cli.train mixtral_axolotl.yml
-
 base_model: mistralai/Mixtral-8x7B-v0.1
 model_type: AutoModelForCausalLM
 tokenizer_type: LlamaTokenizer
@@ -10,33 +8,33 @@ load_in_4bit: true
 strict: false
 
 datasets:
-  - path: tatsu-lab/alpaca
-    type: alpaca
+  - path: Open-Orca/SlimOrca
+    type: sharegpt
+    conversation: chatml
 dataset_prepared_path: last_run_prepared
-val_set_size: 0.0
-output_dir: /wb-mixtral/axolotl
-
-## You can optionally freeze the entire model and unfreeze a subset of parameters
-unfrozen_parameters:
-#  - lm_head.*
-#  - model.embed_tokens.*
-#  - model.layers.2[0-9]+.block_sparse_moe.gate.*
-#  - model.layers.2[0-9]+.block_sparse_moe.experts.*
-#  - model.layers.3[0-9]+.block_sparse_moe.gate.*
-#  - model.layers.3[0-9]+.block_sparse_moe.experts.*
+val_set_size: 0.005
+output_dir: ./slimorca-mixtral-out
+save_total_limit: 2
+hub_model_id: openaccess-ai-collective/slimorca-mixstral-8x7b
+dataloader_num_workers: 8
+dataloader_prefetch_factor: 4
+dataloader_pin_memory: true
 
 adapter: qlora
 lora_model_dir:
 
-sequence_len: 4096
+sequence_len: 8192
 sample_packing: true
 pad_to_sequence_len: true
 
-lora_r: 32
-lora_alpha: 16
-lora_dropout: 0.05
+lora_r: 64
+lora_alpha: 32
+lora_dropout: 0.1
 lora_target_linear: true
 lora_fan_in_fan_out:
+lora_modules_to_save:
+  - lm_head
+  - embed_tokens
 #lora_target_modules:
 #  - gate
 #  - q_proj
@@ -53,18 +51,21 @@ wandb_watch:
 wandb_name:
 wandb_log_model:
 
-gradient_accumulation_steps: 4
-micro_batch_size: 2
-num_epochs: 1
-optimizer: adamw_bnb_8bit
+gradient_accumulation_steps: 1
+micro_batch_size: 4
+num_epochs: 2
+optimizer: paged_adamw_8bit
 lr_scheduler: cosine
-learning_rate: 0.0002
+learning_rate: 0.001
+adam_beta2: 0.95
+adam_epsilon: 0.00001
+max_grad_norm: 1.0
 
 train_on_inputs: false
 group_by_length: false
 bf16: true
 fp16: false
-tf32: false
+tf32: true
 
 gradient_checkpointing: true
 early_stopping_patience:
@@ -74,17 +75,15 @@ logging_steps: 1
 xformers_attention:
 flash_attention: true
 
-loss_watchdog_threshold: 5.0
-loss_watchdog_patience: 3
-
-warmup_steps: 10
-evals_per_epoch: 4
-eval_table_size:
-eval_table_max_new_tokens: 128
-saves_per_epoch: 1
+warmup_steps: 100
+eval_steps: 0.05
+save_steps: 0.25
 debug:
 deepspeed: deepspeed/zero2.json
-weight_decay: 0.0
+weight_decay: 0.1
 fsdp:
 fsdp_config:
 special_tokens:
+  eos_token: "<|im_end|>"
+tokens:
+  - "<|im_start|>"
