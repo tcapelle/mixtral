@@ -111,17 +111,20 @@ def main(config):
         return
 
     trainer.train()
-    save_path = f"{training_args.output_dir}/{wandb.run.id}_alpaca"
-    trainer.save_model(save_path)
-    print("Saving model as artifact to wandb")
-    if config.log_model:
-        model_at = wandb.Artifact(
-            name = f"{wandb.run.id}_alpaca", 
-            type="model",
-            description="Model trained on Alpaca GPT4 dataset",
-            metadata={"finetuned_from":config.model_id})
-        model_at.add_dir(save_path)
-        wandb.log_artifact(model_at)
+    if accelerator.is_main_process:
+        save_path = f"{training_args.output_dir}/{wandb.run.id}_alpaca"
+        trainer.save_model(save_path)
+        print("Saving model as artifact to wandb")
+        if config.log_model:
+            model_at = wandb.Artifact(
+                name = f"{wandb.run.id}_alpaca", 
+                type="model",
+                description="Model trained on Alpaca GPT4 dataset",
+                metadata={"finetuned_from":config.model_id})
+            model_at.add_dir(save_path)
+            wandb.log_artifact(model_at)
+    
+    accelerator.wait_for_everyone()
 
 if __name__ == "__main__":
     parse_args(config)
