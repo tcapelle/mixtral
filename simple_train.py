@@ -12,8 +12,6 @@ from accelerate import Accelerator
 
 from utils import parse_args, create_alpaca_prompt_with_response, debug_trainer_data
 
-
-ALPACA_TOTAL_PACKED_SAMPLES = 11_210 # at seq_len=1024
 WANDB_PROJECT = "mixtral"
 WANDB_ENTITY = "capecape"
 WANDB_TAGS = None
@@ -25,14 +23,14 @@ config = SimpleNamespace(
     batch_size = 1, # what my GPU can handle, depends on how many layers are we training
     effective_batch_size = 8, # batch size for gradient accumulation
     gradient_checkpointing = False,
+    load_in_4bit=True,
+    load_in_8bit=False,
     max_seq_length = 512,
     num_train_epochs = 3, # we do 3 pasess over the dataset.
-    use_lora = True,
     lr = 2e-5,
-    save_model=False,
+    log_model=False,
     # for debug purposes
     max_steps=-1, 
-    train=True,
     debug_data=False,
 )
 
@@ -71,7 +69,7 @@ def main(config):
 
     # some sane defaults computations
     config.gradient_accumulation_steps = (1024 // config.max_seq_length) * config.effective_batch_size // config.batch_size
-    config.tokens_per_step = config.max_seq_length * config.batch_size * config.gradient_accumulation_steps
+    config.tokens_per_step = 8 * config.max_seq_length * config.batch_size * config.gradient_accumulation_steps
     print(f"\nWe are training for {config.max_steps} steps with an effective batch size of {config.effective_batch_size} and a gradient accumulation of {config.gradient_accumulation_steps} steps.")
     print(f"Tokens per step max_seq_len * bs * grad_accum_steps: {config.tokens_per_step}\n")
     
@@ -83,7 +81,8 @@ def main(config):
     model = AutoModelForCausalLM.from_pretrained(
         config.model_id,
         torch_dtype=torch.bfloat16,
-        load_in_4bit=True,
+        load_in_4bit=config.load_in_4bit,
+        load_in_8bit=config.load_in_8bit,
     )
 
     peft_config = LoraConfig(
@@ -111,21 +110,20 @@ def main(config):
     if config.debug_data:
         debug_trainer_data(trainer)
         return
-    if config.train: 
-        trainer.train()
-        if config.save_model:
-            save_path = f"{training_args.output_dir}/{wandb.run.id}_alpaca"
-            trainer.save_model(save_path)
-            print("Saving model as artifact to wandb")
-            model_at = wandb.Artifact(
-                name = f"{wandb.run.id}_alpaca", 
-                type="model",
-                description="Model trained on Alpaca GPT4 dataset",
-                metadata={"finetuned_from":config.model_id})
-            model_at.add_dir(save_path)
-            wandb.log_artifact(model_at)
+
+    trainer.train()
+    save_path = f"{training_args.output_dir}/{wandb.run.id}_alpaca"
+    trainer.save_model(save_path)
+    print("Saving model as artifact to wandb")
+    if config.log_model:
+        model_at = wandb.Artifact(
+            name = f"{wandb.run.id}_alpaca", 
+            type="model",
+            description="Model trained on Alpaca GPT4 dataset",
+            metadata={"finetuned_from":config.model_id})
+        model_at.add_dir(save_path)
+        wandb.log_artifact(model_at)
 
 if __name__ == "__main__":
     parse_args(config)
     main(config)
-
