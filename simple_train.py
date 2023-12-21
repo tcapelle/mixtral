@@ -76,7 +76,7 @@ def main(config):
     print(f"Tokens per step max_seq_len * bs * grad_accum_steps: {config.tokens_per_step}\n")
     
     # inject HP
-    config = wandb.config
+    # config = wandb.config
 
     train_dataset = load_dataset(config.dataset_id, split=config.split)
 
