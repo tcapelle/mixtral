@@ -18,3 +18,6 @@ WORKDIR /workspace
 COPY requirements.txt .
 
 RUN python -m pip install -r requirements.txt
+
+# A soon as lewis cut's a new release we can remove this
+RUN python -m pip install "git+https://github.com/huggingface/trl.git"
