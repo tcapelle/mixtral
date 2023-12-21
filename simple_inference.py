@@ -31,10 +31,10 @@ def main(config):
         load_in_4bit=config.load_in_4bit,
     )
 
-    text = "Hello my name is"
+    text = "Tell me a story about planes and cats, make it Tolkien-esque: "
     inputs = tokenizer(text, return_tensors="pt").to(0)
 
-    outputs = model.generate(**inputs, max_new_tokens=20)
+    outputs = model.generate(**inputs, max_new_tokens=100)
     print(tokenizer.decode(outputs[0], skip_special_tokens=True))
 
 if __name__ == "__main__":
