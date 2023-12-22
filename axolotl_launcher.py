@@ -48,13 +48,18 @@ def load_cfg(config: Path = Path("examples/"), **kwargs):
 def do_cli(config: Path = Path("examples/"), **kwargs):
     # pylint: disable=duplicate-code
     parsed_cfg = load_cfg(config, **kwargs)
+
+    ddp = int(os.environ.get("RANK", -1)) != -1  # is this a ddp run?
     
-    if int(os.environ["RANK"]) == 0:
-        print(f"We are in rank {os.environ['RANK']}, initializing wandb")
+    if ddp:
+        if int(os.environ["RANK"]) == 0:
+            print(f"We are in rank {os.environ['RANK']}, initializing wandb")
+            wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
+    else:
         wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
-        
         # enable wandb injection of config
-        parsed_cfg = DictDefault(wandb.config.as_dict())
+    parsed_cfg = DictDefault(wandb.config.as_dict())
+
     validate_config(parsed_cfg)
     prepare_optim_env(parsed_cfg)
     normalize_config(parsed_cfg)
