@@ -38,7 +38,7 @@ def do_cli(config: Path = Path("examples/"), **kwargs):
         wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
         
         # enable wandb injection of config
-        parsed_cfg = DictDefault(wandb.config)
+        parsed_cfg = DictDefault(wandb.config.as_dict())
 
     train(cfg=parsed_cfg, cli_args=parsed_cli_args, dataset_meta=dataset_meta)
 
