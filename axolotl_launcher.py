@@ -4,6 +4,7 @@ CLI to run training on a model
 import logging
 from pathlib import Path
 import wandb
+import torch
 import fire
 import transformers
 
@@ -32,8 +33,8 @@ def do_cli(config: Path = Path("examples/"), **kwargs):
         return_remaining_strings=True
     )
     dataset_meta = load_datasets(cfg=parsed_cfg, cli_args=parsed_cli_args)
-    
-    wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
+    if torch.torch.cuda.current_device() == 0:
+        wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
     # wandb.init(project="axolotl_debug", entity="capecape")
     
     train(cfg=parsed_cfg, cli_args=parsed_cli_args, dataset_meta=dataset_meta)
