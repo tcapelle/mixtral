@@ -43,19 +43,22 @@ def load_cfg(config: Path = Path("examples/"), **kwargs):
                 cfg[k] = bool(kwargs[k])
             else:
                 cfg[k] = kwargs[k]
-
-    validate_config(cfg)
-
-    prepare_optim_env(cfg)
-
-    normalize_config(cfg)
-
-    setup_wandb_env_vars(cfg)
     return cfg
 
 def do_cli(config: Path = Path("examples/"), **kwargs):
     # pylint: disable=duplicate-code
     parsed_cfg = load_cfg(config, **kwargs)
+    
+    if int(os.environ["RANK"]) == 0:
+        print(f"We are in rank {os.environ['RANK']}, initializing wandb")
+        wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
+        
+        # enable wandb injection of config
+        parsed_cfg = DictDefault(wandb.config.as_dict())
+    validate_config(parsed_cfg)
+    prepare_optim_env(parsed_cfg)
+    normalize_config(parsed_cfg)
+    # setup_wandb_env_vars(cfg)
     print(f"*********Parsed Args********* \n{parsed_cfg}\n***************************")
     print_axolotl_text_art()
     check_accelerate_default_config()
@@ -65,12 +68,6 @@ def do_cli(config: Path = Path("examples/"), **kwargs):
         return_remaining_strings=True
     )
     dataset_meta = load_datasets(cfg=parsed_cfg, cli_args=parsed_cli_args)
-    if int(os.environ["RANK"]) == 0:
-        print(f"We are in rank {os.environ['RANK']}, initializing wandb")
-        wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
-        
-        # enable wandb injection of config
-        parsed_cfg = DictDefault(wandb.config.as_dict())
 
     train(cfg=parsed_cfg, cli_args=parsed_cli_args, dataset_meta=dataset_meta)
 
