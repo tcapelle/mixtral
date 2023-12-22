@@ -35,8 +35,10 @@ def do_cli(config: Path = Path("examples/"), **kwargs):
     if int(os.environ["RANK"]) == 0:
         print(f"We are in rank {os.environ['RANK']}, initializing wandb")
         wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
-    # wandb.init(project="axolotl_debug", entity="capecape")
-    
+        
+        # enable wandb injection of config
+        parsed_cfg = wandb.config    
+        
     train(cfg=parsed_cfg, cli_args=parsed_cli_args, dataset_meta=dataset_meta)
 
     wandb.finish()
