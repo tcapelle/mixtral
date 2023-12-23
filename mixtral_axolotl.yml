@@ -14,8 +14,8 @@ datasets:
 dataset_prepared_path: last_run_prepared
 val_set_size: 0.005
 output_dir: /wb-mixtral/slimorca-mixstral-8x7b
-save_total_limit: 2
-hub_model_id: openaccess-ai-collective/slimorca-mixstral-8x7b
+save_total_limit: 1
+hub_model_id:
 dataloader_num_workers: 8
 dataloader_prefetch_factor: 4
 dataloader_pin_memory: true
