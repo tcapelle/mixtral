@@ -66,7 +66,7 @@ def do_cli(config_fname: Path = Path("examples/"), **kwargs):
             wandb.init(project=parsed_cfg.wandb_project, 
                        entity=parsed_cfg.wandb_entity, 
                        config={"axolotl_config": parsed_cfg})
-            parsed_cfg = DictDefault(wandb.config.axolotl_config.as_dict())
+            parsed_cfg = DictDefault(wandb.config.axolotl_config)
 
             # dump config to yaml and override with wandb config
             with open(config_fname, "w") as f:
@@ -81,7 +81,7 @@ def do_cli(config_fname: Path = Path("examples/"), **kwargs):
         wandb.init(project=parsed_cfg.wandb_project, 
                    entity=parsed_cfg.wandb_entity, 
                    config={"axolotl_config": parsed_cfg})
-        parsed_cfg = DictDefault(wandb.axolotl_config.config.as_dict())
+        parsed_cfg = DictDefault(wandb.config.axolotl_config)
 
     validate_config(parsed_cfg)
     prepare_optim_env(parsed_cfg)
