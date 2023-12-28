@@ -3,10 +3,13 @@ CLI to run training on a model
 """
 
 ## TODO
-## Overwrite the output dir with the run-id
-## Do something with Axolotl params so they can be logged and injected somehow, right now we
+## - Overwrite the output dir with the run-id (we are overwriting the output dir everytime)
+## - Do something with Axolotl params so they can be logged and injected somehow, right now we
 ## log HF Trainer params that get created inside axolotl, we may have conflicting params.
-## 
+## One solution is to create a nested dict with the params and log that, but then we need to
+## make sure that the params are not conflicting with HF Trainer params.
+## Something like: wandb.init(..., config = {axolotl_params: parsed_config})
+## - Pull latest axolotl and rebuild the docker image.
 
 import torch
 import logging, os, yaml
