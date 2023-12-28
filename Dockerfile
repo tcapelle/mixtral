@@ -1,23 +1,8 @@
-FROM nvcr.io/nvidia/pytorch:23.11-py3
+FROM winglian/axolotl:main-latest
 
-# RUN pip uninstall -y flash-attn
+WORKDIR /root/src
+# RUN mkdir -p /root/src
+COPY . /root/src/
 
-# RUN pip install flash-attn --no-build-isolation
-
-WORKDIR /workspace
-
-RUN git clone https://github.com/timdettmers/bitsandbytes.git
-
-WORKDIR /workspace/bitsandbytes
-
-RUN CUDA_VERSION=123 make cuda12x && \
-    python setup.py install
-
-WORKDIR /workspace
-
-COPY requirements.txt .
-
-RUN python -m pip install -r requirements.txt
-
-# A soon as lewis cut's a new release we can remove this
-RUN python -m pip install "git+https://github.com/huggingface/trl.git"
+# Entry Point
+ENTRYPOINT ["accelerate", "launch", "axolotl_launcher.py", "mixtral_axolotl.yml"]
