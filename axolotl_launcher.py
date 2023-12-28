@@ -37,9 +37,6 @@ LOG = logging.getLogger("axolotl.cli.train")
 
 
 def load_cfg(config: Path = Path("examples/"), **kwargs):
-    if Path(config).is_dir():
-        config = choose_config(config)
-
     # load the config from the yaml file
     with open(config, encoding="utf-8") as file:
         cfg: DictDefault = DictDefault(yaml.safe_load(file))
@@ -66,8 +63,10 @@ def do_cli(config_fname: Path = Path("examples/"), **kwargs):
     if ddp:
         if int(os.environ["RANK"]) == 0:
             print(f"We are in rank {os.environ['RANK']}, initializing wandb")
-            wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
-            parsed_cfg = DictDefault(wandb.config.as_dict())
+            wandb.init(project=parsed_cfg.wandb_project, 
+                       entity=parsed_cfg.wandb_entity, 
+                       config={"axolotl_config": parsed_cfg})
+            parsed_cfg = DictDefault(wandb.config.axolotl_config.as_dict())
 
             # dump config to yaml and override with wandb config
             with open(config_fname, "w") as f:
@@ -79,8 +78,10 @@ def do_cli(config_fname: Path = Path("examples/"), **kwargs):
             torch.distributed.barrier()
             parsed_cfg = load_cfg(config_fname, **kwargs)       
     else:
-        wandb.init(project=parsed_cfg.wandb_project, entity=parsed_cfg.wandb_entity, config=parsed_cfg)
-        parsed_cfg = DictDefault(wandb.config.as_dict())
+        wandb.init(project=parsed_cfg.wandb_project, 
+                   entity=parsed_cfg.wandb_entity, 
+                   config={"axolotl_config": parsed_cfg})
+        parsed_cfg = DictDefault(wandb.axolotl_config.config.as_dict())
 
     validate_config(parsed_cfg)
     prepare_optim_env(parsed_cfg)
