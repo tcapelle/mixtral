@@ -1,6 +1,13 @@
 """
 CLI to run training on a model
 """
+
+## TODO
+## Overwrite the output dir with the run-id
+## Do something with Axolotl params so they can be logged and injected somehow, right now we
+## log HF Trainer params that get created inside axolotl, we may have conflicting params.
+## 
+
 import torch
 import logging, os, yaml
 from pathlib import Path
