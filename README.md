@@ -15,3 +15,7 @@ I have not been able to install latest `flash_attn` in any container that has th
 ## Train
 
 Test you system by running the `simple_train.py` script. It will train a model on a small dataset. It takes around 1 hour on a 8xH100 machine.
+
+## Axolotl
+
+Our experiments are being conducted using the Axolotl lib. For this we are uisng a Docker image that can be pulled from this repo. It bakes the execution of the `axolotl_launcher.py` script as a replacement of the axolotl.cli.train script. We do this so we can inject parameters from the W&B UI as a launch job.

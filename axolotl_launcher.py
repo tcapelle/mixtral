@@ -11,6 +11,7 @@ CLI to run training on a model
 ## Something like: wandb.init(..., config = {axolotl_params: parsed_config})
 ## - Pull latest axolotl and rebuild the docker image.
 
+import pickle
 import torch
 import logging, os, yaml
 from pathlib import Path
@@ -39,8 +40,8 @@ LOG = logging.getLogger("axolotl.cli.train")
 def load_cfg(config: Path = Path("examples/"), **kwargs):
     # load the config from the yaml file
     with open(config, encoding="utf-8") as file:
-        cfg: DictDefault = DictDefault(yaml.safe_load(file))
-    cfg.axolotl_config_path = config
+        cfg = yaml.safe_load(file)
+    cfg["axolotl_config_path"] = config
     # if there are any options passed in the cli, if it is something that seems valid from the yaml,
     # then overwrite the value
     cfg_keys = cfg.keys()
@@ -54,6 +55,13 @@ def load_cfg(config: Path = Path("examples/"), **kwargs):
                 cfg[k] = kwargs[k]
     return cfg
 
+
+def dump_config(parsed_cfg):
+    # dump config to yaml file
+    with open("dumped_config.yaml", "w") as file:
+        print(f"Dumping config to dumped_config.yaml: {type(parsed_cfg)}")
+        yaml_config = yaml.dump(parsed_cfg, file)
+
 def do_cli(config_fname: Path = Path("examples/"), **kwargs):
     # pylint: disable=duplicate-code
     parsed_cfg = load_cfg(config_fname, **kwargs)
@@ -61,28 +69,29 @@ def do_cli(config_fname: Path = Path("examples/"), **kwargs):
     ddp = int(os.environ.get("RANK", -1)) != -1  # is this a ddp run?
     
     if ddp:
+        from torch.distributed import init_process_group
+        init_process_group(backend="nccl")
         if int(os.environ["RANK"]) == 0:
             print(f"We are in rank {os.environ['RANK']}, initializing wandb")
-            wandb.init(project=parsed_cfg.wandb_project, 
-                       entity=parsed_cfg.wandb_entity, 
+            wandb.init(project=parsed_cfg["wandb_project"], 
+                       entity=parsed_cfg["wandb_entity"], 
                        config={"axolotl_config": parsed_cfg})
-            parsed_cfg = DictDefault(wandb.config.axolotl_config)
-
-            # dump config to yaml and override with wandb config
-            with open(config_fname, "w") as f:
-                yaml.dump(parsed_cfg, f)
+            parsed_cfg = wandb.config.axolotl_config
+            dump_config(parsed_cfg)
             torch.distributed.barrier()
 
         # we are going to wait for rank 0 to finish writing the config and re-read it
         else:
             torch.distributed.barrier()
-            parsed_cfg = load_cfg(config_fname, **kwargs)       
+            parsed_cfg = load_cfg("dumped_config.yaml", **kwargs)       
     else:
-        wandb.init(project=parsed_cfg.wandb_project, 
-                   entity=parsed_cfg.wandb_entity, 
+        wandb.init(project=parsed_cfg["wandb_project"], 
+                   entity=parsed_cfg["wandb_entity"], 
                    config={"axolotl_config": parsed_cfg})
-        parsed_cfg = DictDefault(wandb.config.axolotl_config)
-
+        
+        parsed_cfg = wandb.config.axolotl_config
+        
+    parsed_cfg = DictDefault(parsed_cfg)
     validate_config(parsed_cfg)
     prepare_optim_env(parsed_cfg)
     normalize_config(parsed_cfg)
@@ -99,7 +108,7 @@ def do_cli(config_fname: Path = Path("examples/"), **kwargs):
 
     train(cfg=parsed_cfg, cli_args=parsed_cli_args, dataset_meta=dataset_meta)
 
-    wandb.finish()
+    # wandb.finish()
 
 
 if __name__ == "__main__":
