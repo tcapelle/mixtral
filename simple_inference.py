@@ -15,7 +15,7 @@ config = SimpleNamespace(
     model_id = "mistralai/Mixtral-8x7B-v0.1",
     text = "Tell me a story about planes and cats, make it Tolkien-esque: ",
     use_flash_attention_2=False,
-    load_in_4bit=False,
+    load_in_4bit=True,
     load_in_8bit=False,
     use_cache=True,
     max_new_tokens=100,
@@ -34,6 +34,7 @@ def main(config):
         device_map="auto",
     )
 
+    print(model)
     
     inputs = tokenizer(config.text, return_tensors="pt").to(0)
     t = time.perf_counter()
