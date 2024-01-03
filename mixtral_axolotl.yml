@@ -30,11 +30,14 @@ pad_to_sequence_len: true
 lora_r: 64
 lora_alpha: 32
 lora_dropout: 0.1
-lora_target_linear: true
+
 lora_fan_in_fan_out:
 lora_modules_to_save:
   - lm_head
   - embed_tokens
+
+# is all or some
+lora_target_linear: true
 #lora_target_modules:
 #  - gate
 #  - q_proj
