@@ -95,7 +95,7 @@ def do_cli(config_fname: Path = Path("examples/"), **kwargs):
     validate_config(parsed_cfg)
     prepare_optim_env(parsed_cfg)
     normalize_config(parsed_cfg)
-    # setup_wandb_env_vars(cfg)
+    setup_wandb_env_vars(parsed_cfg)
     print(f"*********Parsed Args********* \n{parsed_cfg}\n***************************")
     print_axolotl_text_art()
     check_accelerate_default_config()
