@@ -1,3 +1,7 @@
+# Usage: python launch_script.py --cmd "python dummy_train.py --arg1=42 --arg3='hole'" --log True 
+# This will execute the command python dummy_train.py --arg1=42 --arg3='hole' and log the output to W&B.
+# Now this script is launchable with W&B Launch from the UI.
+
 import wandb
 import simple_parsing
 from typing import Optional
